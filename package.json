@@ -2,22 +2,38 @@
   "name": "waymont-contracts",
   "version": "2.0.0",
   "description": "Waymont smart contracts for Safes on EVM-based chains.",
-  "directories": {
-    "lib": "lib",
-    "test": "test"
+  "author": {
+    "name": "ialmanzaj",
+    "url": "https://github.com/ialmanzaj"
   },
+  "dependencies": {
+    "@openzeppelin/contracts": "4.8.3"
+  },
+  "devDependencies": {
+    "@prb/test": "^0.6.4",
+    "forge-std": "github:foundry-rs/forge-std#v1.7.5",
+    "prettier": "^3.0.0",
+    "solhint": "^3.6.2"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "forge",
+    "foundry",
+    "smart-contracts",
+    "solidity",
+    "template"
+  ],
+  "private": true,
   "scripts": {
-    "test": "forge test",
+    "clean": "rm -rf cache out",
     "build": "forge build",
-    "coverage": "forge coverage --ir-minimum"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pentagonxyz/waymont-contracts.git"
-  },
-  "license": "UNLICENSED",
-  "bugs": {
-    "url": "https://github.com/pentagonxyz/waymont-contracts/issues"
-  },
-  "homepage": "https://github.com/pentagonxyz/waymont-contracts#readme"
+    "lint": "bun run lint:sol && bun run prettier:check",
+    "lint:sol": "forge fmt --check && bun solhint {script,src,test}/**/*.sol",
+    "prettier:check": "prettier --check \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\"",
+    "prettier:write": "prettier --write \"**/*.{json,md,yml}\" --ignore-path \".prettierignore\"",
+    "test": "forge test",
+    "test:coverage": "forge coverage",
+    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage"
+  }
 }

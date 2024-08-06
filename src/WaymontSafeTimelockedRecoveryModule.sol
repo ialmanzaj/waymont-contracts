@@ -11,13 +11,17 @@ import "./WaymontSafePolicyGuardianSigner.sol";
 
 /// @title WaymontSafeTimelockedRecoveryModule
 /// @notice Safe module supporting timelocked recovery by an alternate group of signers.
-/// This contract is meant to be used with Safe contracts v1.4.1 (https://github.com/safe-global/safe-contracts/tree/v1.4.1). It can also be used with v1.4.0.
+/// This contract is meant to be used with Safe contracts v1.4.1
+/// (https://github.com/safe-global/safe-contracts/tree/v1.4.1). It can also be used with v1.4.0.
 contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSignatures {
     /// @dev Typehash for `queueTransaction`: `keccak256("QueueSignature(bytes signature)")`.
-    bytes32 private constant QUEUE_SIGNATURE_TYPEHASH = 0x56f7b592467518044b02545f1b4518cd51c746d04978afb6a3b9d05895cb79cf;
+    bytes32 private constant QUEUE_SIGNATURE_TYPEHASH =
+        0x56f7b592467518044b02545f1b4518cd51c746d04978afb6a3b9d05895cb79cf;
 
-    /// @dev Typehash for `execTransaction`: `keccak256("ExecTransaction(address safe,uint256 nonce,address to,uint256 value,bytes data,uint8 operation)")`.
-    bytes32 private constant EXEC_TRANSACTION_TYPEHASH = 0x017ac7ed7bb44ab92aef10c445ff46b9a95c18bfa2bf271178886356daa01e9c;
+    /// @dev Typehash for `execTransaction`: `keccak256("ExecTransaction(address safe,uint256 nonce,address to,uint256
+    /// value,bytes data,uint8 operation)")`.
+    bytes32 private constant EXEC_TRANSACTION_TYPEHASH =
+        0x017ac7ed7bb44ab92aef10c445ff46b9a95c18bfa2bf271178886356daa01e9c;
 
     /// @dev Minimum signing timelock value (in seconds): 15 minutes.
     uint256 public constant MIN_SIGNING_TIMELOCK = 15 minutes;
@@ -40,10 +44,12 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
     /// @notice Incremental nonce to prevent signature reuse on this contract.
     uint256 public nonce;
 
-    /// @notice Event emitted when the underlying transcation succeeds in `WaymontSafeTimelockedRecoveryModule.execTransaction`.
+    /// @notice Event emitted when the underlying transcation succeeds in
+    /// `WaymontSafeTimelockedRecoveryModule.execTransaction`.
     event ExecutionSuccess(bytes32 indexed txHash);
 
-    /// @notice Event emitted when the underlying transcation fails in `WaymontSafeTimelockedRecoveryModule.execTransaction`.
+    /// @notice Event emitted when the underlying transcation fails in
+    /// `WaymontSafeTimelockedRecoveryModule.execTransaction`.
     event ExecutionFailure(bytes32 indexed txHash);
 
     /// @dev Initializes the contract by setting the `Safe`, signers, threshold, and signing timelock.
@@ -51,7 +57,9 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
     /// @param signers The signers underlying this signer contract.
     /// @param threshold The threshold required of signers underlying this signer contract.
     /// @param _signingTimelock Timelock for signers on this contract to submit signed transactions.
-    /// @param _policyGuardianSigner Set to the `WaymontSafePolicyGuardianSigner` contract to validate the policy guardian's signature on recovery; to NOT validate the policy guardian's signature on recovery, set to the zero address.
+    /// @param _policyGuardianSigner Set to the `WaymontSafePolicyGuardianSigner` contract to validate the policy
+    /// guardian's signature on recovery; to NOT validate the policy guardian's signature on recovery, set to the zero
+    /// address.
     /// Can only be called once (because `setupOwners` can only be called once).
     function initialize(
         Safe _safe,
@@ -59,7 +67,9 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
         uint256 threshold,
         uint256 _signingTimelock,
         WaymontSafePolicyGuardianSigner _policyGuardianSigner
-    ) external {
+    )
+        external
+    {
         // Input validation
         require(_safe.isModuleEnabled(address(this)), "The Safe does not have this Waymont module enabled.");
         require(_signingTimelock > MIN_SIGNING_TIMELOCK, "Signing timelock must be at least 15 minutes.");
@@ -79,9 +89,19 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
     /// @param value Quantity of ETH in wei to be sent to the `to` address param.
     /// @param operation Whether the transaction is a call or a delegatecall.
     /// @param signatures Signatures from the recovery signer (and policy guardian signer if enabled).
-    function execTransaction(address to, uint256 value, bytes calldata data, Enum.Operation operation, bytes calldata signatures, bytes calldata policyGuardianSignature) external {
+    function execTransaction(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        Enum.Operation operation,
+        bytes calldata signatures,
+        bytes calldata policyGuardianSignature
+    )
+        external
+    {
         // Generate underlying hash
-        bytes32 underlyingHash = keccak256(abi.encode(EXEC_TRANSACTION_TYPEHASH, safe, nonce++, to, value, keccak256(data), operation));
+        bytes32 underlyingHash =
+            keccak256(abi.encode(EXEC_TRANSACTION_TYPEHASH, safe, nonce++, to, value, keccak256(data), operation));
 
         // Generate overlying signed data and hash
         bytes memory txHashData = abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), underlyingHash);
@@ -91,7 +111,12 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
         checkSignatures(txHash, signatures);
 
         // Check signature from policy guardian (if applicable)
-        if (address(policyGuardianSigner) != address(0)) require(policyGuardianSigner.isValidSignature(txHashData, policyGuardianSignature) == bytes4(0x20c13b0b), "Policy guardian signature validation failed.");
+        if (address(policyGuardianSigner) != address(0)) {
+            require(
+                policyGuardianSigner.isValidSignature(txHashData, policyGuardianSignature) == bytes4(0x20c13b0b),
+                "Policy guardian signature validation failed."
+            );
+        }
 
         // Check timelock
         for (uint256 i = 0; i < threshold; i++) {
@@ -100,7 +125,10 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
             require(timestamp > 0, "Signature not queued.");
             uint256 minExecutionTimestamp = timestamp + signingTimelock;
             require(block.timestamp >= minExecutionTimestamp, "Timelock not satisfied.");
-            require(block.timestamp <= minExecutionTimestamp + QUEUED_SIGNATURE_EXPIRATION, "Queued signatures are only usable for 1 week until they expire.");
+            require(
+                block.timestamp <= minExecutionTimestamp + QUEUED_SIGNATURE_EXPIRATION,
+                "Queued signatures are only usable for 1 week until they expire."
+            );
         }
 
         // Execute transaction
@@ -112,20 +140,33 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
     event SignatureQueued(address signer, bytes32 signedDataHash);
 
     /// @notice Queues a timelocked signature.
-    /// @dev No unqueue function because recovery signers can be removed from this module (and this module can be removed from the `Safe`).
+    /// @dev No unqueue function because recovery signers can be removed from this module (and this module can be
+    /// removed from the `Safe`).
     /// Access control prevents spamming of `SignatureQueued` events.
-    /// @param underlyingHash Computed as `keccak256(abi.encode(EXEC_TRANSACTION_TYPEHASH, safe, nonce, to, value, data, operation))`.
-    /// @param signature The signature on `keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), underlyingHash)))`. (Optionally prefix this hash to be signed with `"\x19Ethereum Signed Message:\n32"` before signing and add 4 to the `v` param.)
+    /// @param underlyingHash Computed as `keccak256(abi.encode(EXEC_TRANSACTION_TYPEHASH, safe, nonce, to, value, data,
+    /// operation))`.
+    /// @param signature The signature on `keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(),
+    /// underlyingHash)))`. (Optionally prefix this hash to be signed with `"\x19Ethereum Signed Message:\n32"` before
+    /// signing and add 4 to the `v` param.)
     /// @param policyGuardianSignature The signature from the policy guardian on `signature` (if applicable).
-    function queueSignature(bytes32 underlyingHash, bytes calldata signature, bytes calldata policyGuardianSignature) external {
+    function queueSignature(
+        bytes32 underlyingHash,
+        bytes calldata signature,
+        bytes calldata policyGuardianSignature
+    )
+        external
+    {
         // Generate overlying signed data hash
         bytes32 txHash = keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), underlyingHash));
 
         // Recover signer
         (uint8 v, bytes32 r, bytes32 s) = signatureSplit(signature, 0);
         address signer;
-        if (v > 30) signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", txHash)), v - 4, r, s);
-        else signer = ecrecover(txHash, v, r, s);
+        if (v > 30) {
+            signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", txHash)), v - 4, r, s);
+        } else {
+            signer = ecrecover(txHash, v, r, s);
+        }
 
         // Validate signer is on the wallet
         require(isOwner(signer), "Invalid signature.");
@@ -140,10 +181,15 @@ contract WaymontSafeTimelockedRecoveryModule is EIP712DomainSeparator, CheckSign
             bytes32 queueSignatureUnderlyingHash = keccak256(abi.encode(QUEUE_SIGNATURE_TYPEHASH, signatureHash));
 
             // Generate overlying signed data
-            bytes memory queueSignatureMsgHashData = abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), queueSignatureUnderlyingHash);
-            
+            bytes memory queueSignatureMsgHashData =
+                abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), queueSignatureUnderlyingHash);
+
             // Validate signature
-            require(policyGuardianSigner.isValidSignature(queueSignatureMsgHashData, policyGuardianSignature) == bytes4(0x20c13b0b), "Policy guardian signature validation failed.");
+            require(
+                policyGuardianSigner.isValidSignature(queueSignatureMsgHashData, policyGuardianSignature)
+                    == bytes4(0x20c13b0b),
+                "Policy guardian signature validation failed."
+            );
         }
 
         // Queue signature

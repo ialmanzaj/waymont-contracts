@@ -5,8 +5,10 @@ import "lib/safe-contracts/contracts/Safe.sol";
 import "lib/safe-contracts/contracts/CheckSignatures.sol";
 
 /// @title WaymontSafeAdvancedSigner
-/// @notice Smart contract signer (via ERC-1271) to support a subgroup of signers (with their own threshold) attached as a signer on a Safe.
-/// This contract is meant to be used with Safe contracts v1.4.1 (https://github.com/safe-global/safe-contracts/tree/v1.4.1). It can also be used with v1.4.0.
+/// @notice Smart contract signer (via ERC-1271) to support a subgroup of signers (with their own threshold) attached as
+/// a signer on a Safe.
+/// This contract is meant to be used with Safe contracts v1.4.1
+/// (https://github.com/safe-global/safe-contracts/tree/v1.4.1). It can also be used with v1.4.0.
 contract WaymontSafeAdvancedSigner is CheckSignatures {
     /// @dev Initializes the contract by setting the `Safe`, signers, and threshold.
     /// @param _safe The `Safe` of which this signer contract will be an owner.
@@ -24,7 +26,8 @@ contract WaymontSafeAdvancedSigner is CheckSignatures {
         safe = _safe;
     }
 
-    /// @notice Signature validation function used by the `Safe` overlying this contract to validate underlying signers attached to this contract.
+    /// @notice Signature validation function used by the `Safe` overlying this contract to validate underlying signers
+    /// attached to this contract.
     /// @param _data Data signed in `_signature`.
     /// @param _signature Signature byte array associated with `_data`.
     /// @dev MUST return the bytes4 magic value 0x20c13b0b when function passes.
